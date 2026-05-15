@@ -29,7 +29,7 @@ kubeadm config images pull --kubernetes-version=1.36.0
 
 # Initialize control plane with kubeadm config file
 # IPv4: /26 per node (fits into /16), IPv6: /122 per node (fits into /108, matches Calico blockSize)
-kubeadm init --config=manifests/kubeadm/init-config.yaml
+kubeadm init --config=manifests/kubeadm/init-config.yaml --ignore-preflight-errors=Mem
 
 # Set up kubeconfig for root user
 mkdir -p /root/.kube
