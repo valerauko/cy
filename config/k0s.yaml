@@ -10,7 +10,10 @@ spec:
       - "163.44.115.241"
 
   network:
-    provider: custom
+    provider: calico
+    calico:
+      mode: bird
+      wireguard: true
     podCIDR: 10.42.0.0/16
     serviceCIDR: 10.43.0.0/16
     primaryAddressFamily: IPv6
