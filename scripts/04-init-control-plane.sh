@@ -45,7 +45,7 @@ systemctl start kine.service
 # Wait for kine to be ready (max 30 seconds)
 echo "  Waiting for kine to be ready..."
 for i in {1..30}; do
-    if systemctl is-active --quiet kine.service && curl -sf http://127.0.0.1:2379/v3/cluster/member/list &> /dev/null; then
+    if systemctl is-active --quiet kine.service && nc -z 127.0.0.1 2379 &> /dev/null; then
         echo "  ✓ Kine is ready"
         break
     fi
