@@ -8,6 +8,7 @@ spec:
     address: "2400:8500:2002:3318:163:44:115:241"
     sans:
       - "163.44.115.241"
+      - "fd00:cafe:43::1"
 
   network:
     provider: calico
