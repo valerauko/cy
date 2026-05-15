@@ -26,10 +26,9 @@ echo ""
 
 # Install and configure kine with sqlite backend
 echo "Setting up kine with sqlite backend..."
-KINE_VERSION="v0.13.9"
 if ! command -v kine &> /dev/null; then
     echo "  Installing kine binary..."
-    curl -sfL https://github.com/k3s-io/kine/releases/download/${KINE_VERSION}/kine-${KINE_VERSION}-linux-amd64.tar.gz | tar -xz -C /usr/local/bin/
+    curl -sfL -o /usr/local/bin/kine --max-redirs 1 https://github.com/k3s-io/kine/releases/download/v0.15.0/kine-amd64
     chmod +x /usr/local/bin/kine
 fi
 
