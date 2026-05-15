@@ -1,0 +1,18 @@
+[Unit]
+Description=Kine - Lightweight etcd replacement with sqlite backend
+After=network.target
+Before=kubelet.service
+
+[Service]
+Type=simple
+User=root
+ExecStartPre=-/usr/bin/mkdir -p /var/lib/kine
+ExecStart=/usr/local/bin/kine --listen 127.0.0.1:2379 --storage-endpoint sqlite:///var/lib/kine/db.sqlite
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kine
+
+[Install]
+WantedBy=multi-user.target

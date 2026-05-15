@@ -46,8 +46,12 @@ controllerManager:
 dns: {}
 encryptionAlgorithm: RSA-2048
 etcd:
-  local:
-    dataDir: /var/lib/etcd
+  external:
+    endpoints:
+    - http://127.0.0.1:2379
+    caFile: ""
+    certFile: ""
+    keyFile: ""
 imageRepository: registry.k8s.io
 networking:
   dnsDomain: cluster.local

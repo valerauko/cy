@@ -24,6 +24,40 @@ echo "Service CIDR IPv4: $SERVICE_CIDR_IPV4"
 echo "Service CIDR IPv6: $SERVICE_CIDR_IPV6 (max /108)"
 echo ""
 
+# Install and configure kine with sqlite backend
+echo "Setting up kine with sqlite backend..."
+KINE_VERSION="v0.13.9"
+if ! command -v kine &> /dev/null; then
+    echo "  Installing kine binary..."
+    curl -sfL https://github.com/k3s-io/kine/releases/download/${KINE_VERSION}/kine-${KINE_VERSION}-linux-amd64.tar.gz | tar -xz -C /usr/local/bin/
+    chmod +x /usr/local/bin/kine
+fi
+
+# Create kine data directory
+mkdir -p /var/lib/kine
+
+# Install kine systemd service
+echo "  Installing kine systemd service..."
+cp manifests/kine/kine.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable kine.service
+systemctl start kine.service
+
+# Wait for kine to be ready (max 30 seconds)
+echo "  Waiting for kine to be ready..."
+for i in {1..30}; do
+    if systemctl is-active --quiet kine.service && curl -sf http://127.0.0.1:2379/v3/cluster/member/list &> /dev/null; then
+        echo "  ✓ Kine is ready"
+        break
+    fi
+    sleep 1
+    if [ $i -eq 30 ]; then
+        echo "Error: kine failed to start within 30 seconds"
+        systemctl status kine.service
+        exit 1
+    fi
+done
+
 # Pull required images first
 kubeadm config images pull --kubernetes-version=1.36.0
 
@@ -38,6 +72,10 @@ chown root:root /root/.kube/config
 
 echo ""
 echo "✓ Control plane initialized successfully!"
+echo ""
+echo "Kine is installed and enabled as a systemd service"
+echo "  Status: sudo systemctl status kine.service"
+echo "  Logs: sudo journalctl -u kine.service -f"
 echo ""
 echo "Next steps:"
 echo "1. Run: source <(kubectl completion bash)"
