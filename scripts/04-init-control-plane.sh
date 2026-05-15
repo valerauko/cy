@@ -50,7 +50,6 @@ sed -i '/^etcd:/,/^imageRepository:/ s/^/#/' /tmp/init-config-no-etcd.yaml
 # Generate etcd CA and server certs using kubeadm
 echo "  Generating certificates using kubeadm..."
 kubeadm init phase certs all --config /tmp/init-config-no-etcd.yaml
-rm /tmp/init-config-no-etcd.yaml
 
 # Restart kine to pick up the new certificates
 echo "  Restarting kine..."
@@ -71,6 +70,8 @@ for i in {1..30}; do
         exit 1
     fi
 done
+
+rm /tmp/init-config-no-etcd.yaml
 
 # Initialize the control plane using the original config
 echo "  Initializing control plane..."
