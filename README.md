@@ -21,9 +21,10 @@ A lightweight, fully-customizable Kubernetes 1.36 cluster using **kubeadm**, **C
 - **Hardware:** Each node needs ≥2 CPUs, ≥2GB RAM
 - **Network:** All nodes have wireguard kernel module support (Ubuntu 26.04 standard)
 - **Network separation:** Nodes can be on different physical networks (wireguard tunnels traffic)
+- **IPv6 connectivity:** All nodes must have routed IPv6 addresses and be able to reach each other
+- **Control plane IPv6:** Control plane must have a routed IPv6 address for Calico bootstrap
 - **Sudo access** on all nodes
 - **No swap** (Kubernetes requirement — disable if present)
-- **IPv6 addressing:** Each node should have an IPv6 address or address pool assigned
 - **IPv6 CIDR constraints:** If using dual-stack, pod and service CIDRs must be ≤/108 (smaller ranges cause silent failure)
 
 ## Quick Start
@@ -124,6 +125,13 @@ sudo wg show
 
 ## Network Architecture
 
+### Topology Assumptions
+
+This setup is optimized for **network-distributed nodes with routed IPv6**:
+- All nodes have routed IPv6 connectivity (can reach each other)
+- Control plane has routed IPv4; workers may not
+- Wireguard creates encrypted tunnels between nodes over existing routing
+
 ### Dual-Stack (IPv4 + IPv6)
 
 **IPv4 Pod Network:**
@@ -131,19 +139,20 @@ sudo wg show
 - Block size: `/26` per node
 - Encapsulation: Wireguard
 - Nat Outgoing: Enabled
+- **Egress behavior:** IPv4 packets from worker pods are SNAT'd through control plane (which has routed IPv4)
 
-**IPv6 Pod Network (if enabled):**
-- CIDR: `fd00:10:244::/108` (default, customizable — **max /108**)
-- Block size: `/122` (combines to `/64` per node, but constrained by parent /108 limit)
+**IPv6 Pod Network:**
+- CIDR: `fd00:10:244::/108` (default, customizable)
+- Block size: `/122` (combines to `/64` per node)
 - Encapsulation: Wireguard
 - Nat Outgoing: Disabled (IPv6 has built-in address uniqueness)
-- **Note:** Kubernetes IPv6 support has practical limits; /108 is the safe maximum (tested constraint)
+- **Egress behavior:** IPv6 packets route natively (all nodes have routed IPv6)
 
 ### Wireguard Encryption
 
 All inter-node traffic is encrypted via Wireguard:
-- **MTU adjusted:** 1380 bytes (accounts for wireguard overhead of ~80 bytes)
-- **Transparent:** No application changes required
+- **MTU adjusted:** 1380 bytes (accounts for wireguard overhead)
+- **Threading:** Dedicated thread for wireguard ops (improves throughput)
 - **Automatic:** Calico manages key exchange and peer discovery
 - **Verification:**
   ```bash
@@ -151,12 +160,30 @@ All inter-node traffic is encrypted via Wireguard:
   sudo wg show
   ```
 
+### BGP Full-Mesh Routing
+
+Calico uses BIRD BGP for pod route distribution:
+- **Full-mesh mode:** Nodes automatically peer with each other
+- **Peer discovery:** Automatic — no manual configuration needed
+- **Route exchange:** Each node announces its pod blocks to others
+- **Pod-to-pod traffic:** Routes between nodes via wireguard tunnels
+
+**How it works:**
+1. Each Calico node joins the BGP mesh with ASN 64512
+2. Nodes discover each other and establish BGP sessions
+3. Node A announces its `/26` (IPv4) or `/64` (IPv6) pod blocks
+4. Node B learns the routes and can forward traffic to Node A's pods
+5. Packet flow: Pod → wireguard tunnel → remote node → pod
+
+**No external BGP routers needed** — the cluster is self-contained.
+
 ### Network-Separated Nodes
 
-Nodes can be on completely different networks (e.g., different subnets, sites, clouds):
-- Wireguard creates encrypted tunnels between nodes
-- Calico's BIRD BGP handles routing across wireguard links
-- IPv6 addresses should be unique per node; IPv4 is automatic per /26 block
+Even though nodes are network-separated (on different physical networks):
+- Wireguard creates encrypted tunnels through your existing routing
+- BGP routing works on top of wireguard tunnels
+- Pods can communicate as if on the same network
+- External IPv4 access flows through control plane (single egress point)
 
 ## IPv6 CIDR Constraints
 
@@ -182,25 +209,63 @@ If you need more addresses:
 All Calico configuration is stored as static manifests in `manifests/calico/`:
 
 - **crds.yaml** — Calico CustomResourceDefinitions
-- **config.yaml** — ConfigMap with CNI and BIRD configuration (uses Kubernetes DNS for API discovery)
+- **config.yaml** — ConfigMap with:
+  - `kubernetes_service_host` — **MUST be control plane's routed IPv6 address** (nodes need this before CoreDNS is up)
+  - CNI and BIRD BGP configuration
 - **manifest.yaml** — DaemonSets, Deployments, and RBAC
-- **ippools.yaml** — IPv4 and IPv6 IP pools with wireguard configuration
+- **ippools.yaml** — BGP configuration, IPv4 + IPv6 IP pools with wireguard
+
+### Important: Control Plane IPv6 Address
+
+The `kubernetes_service_host` in `config.yaml` **must be the control plane's routed IPv6 address**. This is critical because:
+
+1. Calico nodes need to reach the Kubernetes API during bootstrap
+2. CoreDNS isn't running yet, so DNS resolution won't work
+3. IPv6 is routed to all nodes, making it reliable
+4. IPv4 is only available on control plane, so it wouldn't work for worker nodes
+
+**Current default:** `2400:8500:2002:3318:163:44:115:241`
+
+**To customize:** Edit `manifests/calico/config.yaml`
+```yaml
+data:
+  kubernetes_service_host: "<YOUR_CONTROL_PLANE_IPV6_ADDRESS>"
+  kubernetes_service_port: "6443"
+```
+
+### BGP Full-Mesh Configuration
+
+The `ippools.yaml` includes BGP configuration:
+```yaml
+apiVersion: crd.projectcalico.org/v1
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  asNumber: 64512  # Private ASN — nodes auto-mesh with this ASN
+```
+
+**This enables:**
+- Automatic node discovery and peering
+- Pod route distribution between nodes
+- Pod-to-pod connectivity across wireguard tunnels
 
 **Customizable settings** (after cluster init):
 - Encapsulation type (Wireguard/VXLan/IPIPCrossSubnet)
 - Wireguard MTU and threading
 - Nat Outgoing behavior
+- ASN for BGP mesh
 
 **Fixed settings** (must match at init time):
 - Pod and service CIDRs (configured in both `04-init-control-plane.sh` and `ippools.yaml`)
 
 **To modify after cluster init:**
-1. Edit `manifests/calico/ippools.yaml`
-2. Apply: `kubectl apply -f manifests/calico/ippools.yaml`
+1. Edit `manifests/calico/ippools.yaml` or `manifests/calico/config.yaml`
+2. Apply: `kubectl apply -f manifests/calico/<filename>.yaml`
 
-**To change CIDRs** (requires cluster reset):
-1. Edit both `scripts/04-init-control-plane.sh` and `manifests/calico/ippools.yaml`
-2. Reset cluster and reinitialize
+**To change control plane IPv6 address:**
+1. Edit `manifests/calico/config.yaml` before deploying
+2. Apply: `kubectl apply -f manifests/calico/config.yaml`
 
 ## Useful Commands
 
@@ -328,6 +393,7 @@ metadata:
   name: default
 spec:
   wireguardEnabled: true
+  wireguardThreadingEnabled: true
   wireguardMTUOverride: 1380  # Adjust based on your network
 ```
 
@@ -341,6 +407,17 @@ natOutgoing: Disabled
 ```
 
 Then reapply: `kubectl apply -f manifests/calico/ippools.yaml`
+
+### Update Control Plane IPv6 Address
+
+If your control plane's routed IPv6 address differs from the default, update `manifests/calico/config.yaml`:
+```yaml
+data:
+  kubernetes_service_host: "<YOUR_CONTROL_PLANE_IPV6>"
+  kubernetes_service_port: "6443"
+```
+
+Then reapply: `kubectl apply -f manifests/calico/config.yaml`
 
 ### Adjust Kubelet Settings
 ```bash

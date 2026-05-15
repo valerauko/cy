@@ -7,9 +7,10 @@ metadata:
   namespace: kube-system
 data:
   # Set these to the IP and port of your API server
-  # Use DNS service discovery to support both IPv4 and IPv6
-  kubernetes_service_host: "kubernetes.default.svc"
-  kubernetes_service_port: "443"
+  # Use the control plane's routed IPv6 address (nodes must reach this during bootstrap before CoreDNS is available)
+  # This should match your control plane's actual routed IPv6 address
+  kubernetes_service_host: "2400:8500:2002:3318:163:44:115:241"
+  kubernetes_service_port: "6443"
 
   # Typha is disabled.
   typha_service_name: "none"

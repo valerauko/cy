@@ -1,4 +1,15 @@
 ---
+# BGP configuration for full-mesh peering
+# Nodes automatically discover and peer with each other
+# Routes are exchanged directly between nodes via BIRD BGP
+apiVersion: crd.projectcalico.org/v1
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  asNumber: 65432  # Private ASN range (64512-65534), any value works for mesh
+
+---
 # IPv4 pod network pool with wireguard encryption
 apiVersion: crd.projectcalico.org/v1
 kind: IPPool
@@ -8,7 +19,7 @@ spec:
   blockSize: 26
   cidr: 10.244.0.0/16
   encapsulation: Wireguard
-  natOutgoing: Enabled
+  natOutgoing: Enabled  # IPv4 pods reach external services via control plane NAT
   nodeSelector: "!node-role.kubernetes.io/control-plane"
 
 ---
