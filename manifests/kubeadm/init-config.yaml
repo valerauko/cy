@@ -19,6 +19,8 @@ nodeRegistration:
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
+kubeletConfiguration:
+  cgroupDriver: cgroupfs
 timeouts:
   controlPlaneComponentHealthCheck: 4m0s
   discovery: 5m0s

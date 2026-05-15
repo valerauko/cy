@@ -27,10 +27,5 @@ apt-get install -y kubelet=1.36.0-1.1 kubeadm=1.36.0-1.1 kubectl=1.36.0-1.1
 # Prevent automatic updates
 apt-mark hold kubelet kubeadm kubectl
 
-# Configure kubelet to use CRI-O
-cat <<EOF > /etc/default/kubelet
-KUBELET_EXTRA_ARGS=--cgroup-driver=cgroupfs --container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock
-EOF
-
 systemctl enable kubelet
 systemctl start kubelet
