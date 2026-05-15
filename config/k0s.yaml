@@ -1,0 +1,48 @@
+apiVersion: k0s.k0sproject.io/v1beta1
+kind: ClusterConfig
+metadata:
+  name: k0s
+
+spec:
+  api:
+    address: "2400:8500:2002:3318:163:44:115:241"
+    sans:
+      - "163.44.115.241"
+
+  network:
+    provider: custom
+    podCIDR: 10.42.0.0/16
+    serviceCIDR: 10.43.0.0/16
+    primaryAddressFamily: IPv6
+    kubeProxy:
+      disabled: true
+    dualStack:
+      enabled: true
+      IPv6podCIDR: "fd00:cafe:42::/108"
+      IPv6serviceCIDR: "fd00:cafe:43::/112"
+
+  storage:
+    type: kine
+
+  workerProfiles:
+    - name: default
+      values:
+        containerRuntimeEndpoint: unix:///run/crio/crio.sock
+        # Reduce kubelet memory pressure
+        maxPods: 50
+        kubeAPIQPS: 5
+        kubeAPIBurst: 10
+        serializeImagePulls: true
+        evictionHard:
+          memory.available: "100Mi"
+        systemReserved:
+          memory: "200Mi"
+
+  images:
+    default_pull_policy: IfNotPresent
+
+  extensions:
+    helm:
+
+  telemetry:
+    enabled: false
