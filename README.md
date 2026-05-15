@@ -63,15 +63,17 @@ sudo bash scripts/04-init-control-plane.sh
 **Hardcoded configuration** (same as `manifests/calico/`):
 - Control Plane IPv4: `163.44.115.241`
 - Control Plane IPv6: `2400:8500:2002:3318:163:44:115:241`
-- Pod CIDR IPv4: `10.244.0.0/16`
-- Pod CIDR IPv6: `fd00:10:244::/108`
+- Pod CIDR IPv4: `10.244.0.0/16` (node mask: `/26`)
+- Pod CIDR IPv6: `fd00:10:244::/108` (node mask: `/122`)
 - Service CIDR IPv4: `10.96.0.0/12`
 - Service CIDR IPv6: `fd00:10:96::/108`
 
+**IPv6 node CIDR mask size is set to `/122`** to fit within the `/108` pod CIDR and match Calico's blockSize setting. This allows ~16K pods per node.
+
 To use different addresses or CIDRs, edit:
-- `scripts/04-init-control-plane.sh` (control plane addresses)
+- `scripts/04-init-control-plane.sh` (control plane addresses, pod/service CIDRs, and node mask sizes)
 - `manifests/calico/config.yaml` (API server address for Calico)
-- `manifests/calico/ippools.yaml` (pod and service CIDRs)
+- `manifests/calico/ippools.yaml` (IP pool configurations)
 
 **Save the join token** from the output — you'll need it for data plane nodes.
 
@@ -526,6 +528,9 @@ cy/
 │   ├── 05-calico.sh               # Deploy Calico (declarative manifests)
 │   └── 06-join-worker.sh          # Join data plane nodes
 └── manifests/
+    ├── kubeadm/
+    │   ├── init-config.yaml       # Kubeadm cluster init config (dual-stack, CIDR masks)
+    │   └── README.md              # Customization guide
     └── calico/
         ├── crds.yaml              # CustomResourceDefinitions
         ├── config.yaml            # ConfigMap (CNI + BIRD)

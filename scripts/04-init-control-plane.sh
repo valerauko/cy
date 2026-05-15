@@ -27,24 +27,9 @@ echo ""
 # Pull required images first
 kubeadm config images pull --kubernetes-version=1.36.0
 
-# Build kubeadm init command with dual-stack support
-KUBEADM_CMD="kubeadm init \
-    --kubernetes-version=1.36.0 \
-    --control-plane-endpoint=$CONTROL_PLANE_IP \
-    --cri-socket=unix:///var/run/crio/crio.sock"
-
-# Add IPv4 CIDRs
-KUBEADM_CMD="$KUBEADM_CMD \
-    --pod-network-cidr=$POD_CIDR_IPV4 \
-    --service-cidr=$SERVICE_CIDR_IPV4"
-
-# Add IPv6 CIDRs (dual-stack)
-KUBEADM_CMD="$KUBEADM_CMD \
-    --pod-network-cidr=$POD_CIDR_IPV4,$POD_CIDR_IPV6 \
-    --service-cidr=$SERVICE_CIDR_IPV4,$SERVICE_CIDR_IPV6"
-
-# Initialize control plane
-eval "$KUBEADM_CMD"
+# Initialize control plane with kubeadm config file
+# IPv4: /26 per node (fits into /16), IPv6: /122 per node (fits into /108, matches Calico blockSize)
+kubeadm init --config=manifests/kubeadm/init-config.yaml
 
 # Set up kubeconfig for root user
 mkdir -p /root/.kube
