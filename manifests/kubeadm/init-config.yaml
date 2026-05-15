@@ -19,8 +19,6 @@ nodeRegistration:
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
-kubeletConfiguration:
-  cgroupDriver: cgroupfs
 timeouts:
   controlPlaneComponentHealthCheck: 4m0s
   discovery: 5m0s
@@ -29,6 +27,10 @@ timeouts:
   kubernetesAPICall: 1m0s
   tlsBootstrap: 5m0s
   upgradeManifests: 5m0s
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: systemd
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
