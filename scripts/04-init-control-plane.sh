@@ -64,8 +64,11 @@ sed -i '/^etcd:/,/^imageRepository:/ s/^/#/' /tmp/init-config-no-etcd.yaml
 
 # Generate etcd CA and server certs using kubeadm
 echo "  Generating etcd certificates using kubeadm..."
+kubeadm init phase certs ca --config /tmp/init-config-no-etcd.yaml
 kubeadm init phase certs etcd-ca --config /tmp/init-config-no-etcd.yaml
 kubeadm init phase certs etcd-server --config /tmp/init-config-no-etcd.yaml
+kubeadm init phase certs etcd-peer --config /tmp/init-config-no-etcd.yaml
+kubeadm init phase certs etcd-healthcheck-client --config /tmp/init-config-no-etcd.yaml
 kubeadm init phase certs apiserver-etcd-client --config /tmp/init-config-no-etcd.yaml
 rm /tmp/init-config-no-etcd.yaml
 
