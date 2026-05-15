@@ -57,25 +57,21 @@ sudo modprobe wireguard && echo "✓ Wireguard ready"
 On the **control plane node only**, run:
 
 ```bash
-# IPv4-only
-export CP_IP=192.168.1.10
-sudo bash scripts/04-init-control-plane.sh $CP_IP
-
-# Or dual-stack (IPv4 + IPv6)
-export CP_IP=192.168.1.10
-export CP_IPV6=2001:db8::10
-sudo bash scripts/04-init-control-plane.sh $CP_IP $CP_IPV6
+sudo bash scripts/04-init-control-plane.sh
 ```
 
-**CIDRs are fixed** to match `manifests/calico/ippools.yaml`:
+**Hardcoded configuration** (same as `manifests/calico/`):
+- Control Plane IPv4: `163.44.115.241`
+- Control Plane IPv6: `2400:8500:2002:3318:163:44:115:241`
 - Pod CIDR IPv4: `10.244.0.0/16`
 - Pod CIDR IPv6: `fd00:10:244::/108`
 - Service CIDR IPv4: `10.96.0.0/12`
 - Service CIDR IPv6: `fd00:10:96::/108`
 
-To use different CIDRs, edit both:
-- `scripts/04-init-control-plane.sh` (control plane CIDR variables)
-- `manifests/calico/ippools.yaml` (Calico IP pools)
+To use different addresses or CIDRs, edit:
+- `scripts/04-init-control-plane.sh` (control plane addresses)
+- `manifests/calico/config.yaml` (API server address for Calico)
+- `manifests/calico/ippools.yaml` (pod and service CIDRs)
 
 **Save the join token** from the output — you'll need it for data plane nodes.
 
