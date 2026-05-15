@@ -1,0 +1,38 @@
+---
+# IPv4 pod network pool with wireguard encryption
+apiVersion: crd.projectcalico.org/v1
+kind: IPPool
+metadata:
+  name: default-ipv4-ippool
+spec:
+  blockSize: 26
+  cidr: 10.244.0.0/16
+  encapsulation: Wireguard
+  natOutgoing: Enabled
+  nodeSelector: "!node-role.kubernetes.io/control-plane"
+
+---
+# IPv6 pod network pool with wireguard encryption
+# /108 is the practical safe maximum for IPv6 support
+# This provides enough space for small to medium clusters
+apiVersion: crd.projectcalico.org/v1
+kind: IPPool
+metadata:
+  name: default-ipv6-ippool
+spec:
+  blockSize: 122  # /122 blocks combine to /64 per node
+  cidr: fd00:10:244::/108
+  encapsulation: Wireguard
+  natOutgoing: Disabled  # IPv6 has built-in address uniqueness
+  nodeSelector: "!node-role.kubernetes.io/control-plane"
+
+---
+# Enable wireguard for encrypted inter-node traffic
+apiVersion: crd.projectcalico.org/v1
+kind: FelixConfiguration
+metadata:
+  name: default
+spec:
+  wireguardEnabled: true
+  wireguardThreadingEnabled: true  # Dedicate thread for wireguard ops (improves throughput on multi-core nodes)
+  wireguardMTUOverride: 1380

@@ -2,18 +2,20 @@
 set -euo pipefail
 
 # Initialize the Kubernetes control plane with kubeadm
-# Supports dual-stack (IPv4 + IPv6) networking with wireguard encryption
+# Uses CIDRs that match manifests/calico/ippools.yaml
 # Run this ONLY on the control plane node
 
 CONTROL_PLANE_IP="${1:-}"
 CONTROL_PLANE_IPV6="${2:-}"
+
+# Must match manifests/calico/ippools.yaml
 POD_CIDR_IPV4="10.244.0.0/16"
-POD_CIDR_IPV6="${3:-fd00:10:244::/108}"  # /108 for IPv6 pod network (safe upper limit)
+POD_CIDR_IPV6="fd00:10:244::/108"
 SERVICE_CIDR_IPV4="10.96.0.0/12"
-SERVICE_CIDR_IPV6="${4:-fd00:10:96::/108}"  # /108 for IPv6 service network (safe upper limit)
+SERVICE_CIDR_IPV6="fd00:10:96::/108"
 
 if [[ -z "$CONTROL_PLANE_IP" ]]; then
-    echo "Usage: $0 <CONTROL_PLANE_IP_V4> [CONTROL_PLANE_IP_V6] [POD_CIDR_V6] [SERVICE_CIDR_V6]"
+    echo "Usage: $0 <CONTROL_PLANE_IP_V4> [CONTROL_PLANE_IP_V6]"
     echo ""
     echo "Examples:"
     echo "  IPv4 only:"
@@ -22,8 +24,13 @@ if [[ -z "$CONTROL_PLANE_IP" ]]; then
     echo "  Dual-stack (IPv4 + IPv6):"
     echo "    $0 192.168.1.10 2001:db8::10"
     echo ""
-    echo "  Custom CIDRs (note: max /108 for both pod and service):"
-    echo "    $0 192.168.1.10 2001:db8::10 fd00:10:244::/108 fd00:10:96::/108"
+    echo "Note: Pod and service CIDRs are fixed to match manifests/calico/ippools.yaml:"
+    echo "  Pod CIDR IPv4: $POD_CIDR_IPV4"
+    echo "  Pod CIDR IPv6: $POD_CIDR_IPV6"
+    echo "  Service CIDR IPv4: $SERVICE_CIDR_IPV4"
+    echo "  Service CIDR IPv6: $SERVICE_CIDR_IPV6"
+    echo ""
+    echo "To use different CIDRs, edit this script and manifests/calico/ippools.yaml"
     exit 1
 fi
 

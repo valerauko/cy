@@ -6,10 +6,10 @@ metadata:
   name: calico-config
   namespace: kube-system
 data:
-  # Set these to the IP and port of your API server; In BPF mode, we need to connect directly to the
-  # API server because we take over kube-proxy's role.
-  kubernetes_service_host: "2400:8500:2002:3318:163:44:115:241"
-  kubernetes_service_port: "6443"
+  # Set these to the IP and port of your API server
+  # Use DNS service discovery to support both IPv4 and IPv6
+  kubernetes_service_host: "kubernetes.default.svc"
+  kubernetes_service_port: "443"
 
   # Typha is disabled.
   typha_service_name: "none"
