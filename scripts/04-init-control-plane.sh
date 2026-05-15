@@ -75,7 +75,7 @@ rm /tmp/init-config-no-etcd.yaml
 
 # Initialize the control plane using the original config
 echo "  Initializing control plane..."
-kubeadm init --config manifests/kubeadm/init-config.yaml --upload-certs
+kubeadm init --config manifests/kubeadm/init-config.yaml --upload-certs --ignore-preflight-errors=ExternalEtcdVersion
 
 # Set up kubeconfig for root user
 mkdir -p /root/.kube
