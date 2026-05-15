@@ -57,24 +57,41 @@ for i in {1..30}; do
     fi
 done
 
-# Pull required images first
-kubeadm config images pull --kubernetes-version=1.36.0
+# Create a temporary kubeadm config without the external etcd config
+echo "  Creating temporary kubeadm config to generate etcd certs..."
+cp manifests/kubeadm/init-config.yaml /tmp/init-config-no-etcd.yaml
+sed -i '/^etcd:/,/^imageRepository:/ s/^/#/' /tmp/init-config-no-etcd.yaml
 
-# Generate certificates for kine
-mkdir -p /etc/kubernetes/pki/etcd
-openssl genrsa -out /etc/kubernetes/pki/etcd/server.key 2048
-openssl req -new -key /etc/kubernetes/pki/etcd/server.key -out /etc/kubernetes/pki/etcd/server.csr -subj "/CN=kine"
-openssl x509 -req -in /etc/kubernetes/pki/etcd/server.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out /etc/kubernetes/pki/etcd/server.crt -days 365
-openssl genrsa -out /etc/kubernetes/pki/etcd/client.key 2048
-openssl req -new -key /etc/kubernetes/pki/etcd/client.key -out /etc/kubernetes/pki/etcd/client.csr -subj "/CN=kube-apiserver"
-openssl x509 -req -in /etc/kubernetes/pki/etcd/client.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out /etc/kubernetes/pki/etcd/client.crt -days 365
+# Generate etcd CA and server certs using kubeadm
+echo "  Generating etcd certificates using kubeadm..."
+kubeadm init phase certs etcd-ca --config /tmp/init-config-no-etcd.yaml
+kubeadm init phase certs etcd-server --config /tmp/init-config-no-etcd.yaml
+kubeadm init phase certs apiserver-etcd-client --config /tmp/init-config-no-etcd.yaml
+rm /tmp/init-config-no-etcd.yaml
 
-systemctl daemon-reload
+# Restart kine to pick up the new certificates
+echo "  Restarting kine..."
 systemctl restart kine
 
-# Initialize control plane with kubeadm config file
-# IPv4: /26 per node (fits into /16), IPv6: /122 per node (fits into /108, matches Calico blockSize)
-kubeadm init --config /etc/kubernetes/kubeadm/init-config.yaml --upload-certs
+# Wait for kine to be ready again after restart
+echo "  Waiting for kine to be ready..."
+for i in {1..30}; do
+    if systemctl is-active --quiet kine.service && openssl s_client -connect 127.0.0.1:2379 -cert /etc/kubernetes/pki/apiserver-etcd-client.crt -key /etc/kubernetes/pki/apiserver-etcd-client.key -cacert /etc/kubernetes/pki/etcd/ca.crt &> /dev/null; then
+        echo "  ✓ Kine is ready with TLS"
+        break
+    fi
+    sleep 1
+    if [ $i -eq 30 ]; then
+        echo "Error: kine failed to start with TLS within 30 seconds"
+        systemctl status kine.service
+        journalctl -u kine.service -n 50
+        exit 1
+    fi
+done
+
+# Initialize the control plane using the original config
+echo "  Initializing control plane..."
+kubeadm init --config manifests/kubeadm/init-config.yaml --upload-certs
 
 # Set up kubeconfig for root user
 mkdir -p /root/.kube
