@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CRIO_VERSION="v1.35"
+# CRI-O version must match Kubernetes version
+CRIO_VERSION="v1.36"
 
-echo "cnh-01" > /etc/hostname
-
-pkill -9 unattended
+# Disable unattended upgrades to avoid conflicts
+pkill -9 unattended 2>/dev/null || true
 
 apt-get update
 apt-get upgrade --with-new-pkgs -y
