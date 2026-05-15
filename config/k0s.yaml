@@ -15,8 +15,7 @@ spec:
       mode: bird
       wireguard: true
       envVars:
-        IP_AUTODETECTION_METHOD: skip-interface=lo
-        IP6_AUTODETECTION_METHOD: skip-interface=lo
+        KUBERNETES_SERVICE_HOST: "2400:8500:2002:3318:163:44:115:241"
     podCIDR: 10.42.0.0/16
     serviceCIDR: 10.43.0.0/16
     primaryAddressFamily: IPv6
