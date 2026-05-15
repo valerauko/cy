@@ -42,34 +42,14 @@ systemctl daemon-reload
 systemctl enable kine.service
 systemctl start kine.service
 
-# Wait for kine to be ready (max 30 seconds)
-echo "  Waiting for kine to be ready..."
-for i in {1..30}; do
-    if systemctl is-active --quiet kine.service && nc -z 127.0.0.1 2379 &> /dev/null; then
-        echo "  ✓ Kine is ready"
-        break
-    fi
-    sleep 1
-    if [ $i -eq 30 ]; then
-        echo "Error: kine failed to start within 30 seconds"
-        systemctl status kine.service
-        exit 1
-    fi
-done
-
 # Create a temporary kubeadm config without the external etcd config
 echo "  Creating temporary kubeadm config to generate etcd certs..."
 cp manifests/kubeadm/init-config.yaml /tmp/init-config-no-etcd.yaml
 sed -i '/^etcd:/,/^imageRepository:/ s/^/#/' /tmp/init-config-no-etcd.yaml
 
 # Generate etcd CA and server certs using kubeadm
-echo "  Generating etcd certificates using kubeadm..."
-kubeadm init phase certs ca --config /tmp/init-config-no-etcd.yaml
-kubeadm init phase certs etcd-ca --config /tmp/init-config-no-etcd.yaml
-kubeadm init phase certs etcd-server --config /tmp/init-config-no-etcd.yaml
-kubeadm init phase certs etcd-peer --config /tmp/init-config-no-etcd.yaml
-kubeadm init phase certs etcd-healthcheck-client --config /tmp/init-config-no-etcd.yaml
-kubeadm init phase certs apiserver-etcd-client --config /tmp/init-config-no-etcd.yaml
+echo "  Generating certificates using kubeadm..."
+kubeadm init phase certs all --config /tmp/init-config-no-etcd.yaml
 rm /tmp/init-config-no-etcd.yaml
 
 # Restart kine to pick up the new certificates
@@ -79,7 +59,7 @@ systemctl restart kine
 # Wait for kine to be ready again after restart
 echo "  Waiting for kine to be ready..."
 for i in {1..30}; do
-    if systemctl is-active --quiet kine.service && openssl s_client -connect 127.0.0.1:2379 -cert /etc/kubernetes/pki/apiserver-etcd-client.crt -key /etc/kubernetes/pki/apiserver-etcd-client.key -cacert /etc/kubernetes/pki/etcd/ca.crt &> /dev/null; then
+    if systemctl is-active --quiet kine.service && openssl s_client -connect 127.0.0.1:2379 -cert /etc/kubernetes/pki/apiserver-etcd-client.crt -key /etc/kubernetes/pki/apiserver-etcd-client.key -CAfile /etc/kubernetes/pki/ca.crt &> /dev/null; then
         echo "  ✓ Kine is ready with TLS"
         break
     fi
