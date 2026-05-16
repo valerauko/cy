@@ -18,7 +18,6 @@ metadata:
 spec:
   blockSize: 26
   cidr: 10.244.0.0/16
-  vxlanMode: Never
   natOutgoing: Enabled  # IPv4 pods reach external services via control plane NAT
   nodeSelector: "!node-role.kubernetes.io/control-plane"
 
@@ -33,7 +32,6 @@ metadata:
 spec:
   blockSize: 122  # /122 blocks combine to /64 per node
   cidr: fd00:10:244::/108
-  vxlanMode: Never
   natOutgoing: Disabled  # IPv6 has built-in address uniqueness
   nodeSelector: "!node-role.kubernetes.io/control-plane"
 
@@ -45,6 +43,7 @@ metadata:
   name: default
 spec:
   wireguardEnabled: true
+  wireguardEnabledV6: true
   wireguardInterfaceName: "wireguard.cali"
   wireguardMTU: 1380
   wireguardThreadingEnabled: true  # Dedicate thread for wireguard ops (improves throughput on multi-core nodes)
