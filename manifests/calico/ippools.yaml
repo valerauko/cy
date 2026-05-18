@@ -18,7 +18,7 @@ metadata:
 spec:
   blockSize: 26
   cidr: 10.244.0.0/16
-  natOutgoing: Enabled  # IPv4 pods reach external services via control plane NAT
+  natOutgoing: true  # IPv4 pods reach external services via control plane NAT
   nodeSelector: "!node-role.kubernetes.io/control-plane"
 
 ---
@@ -32,7 +32,7 @@ metadata:
 spec:
   blockSize: 122  # /122 blocks combine to /64 per node
   cidr: fd00:10:244::/108
-  natOutgoing: Disabled  # IPv6 has built-in address uniqueness
+  natOutgoing: false  # IPv6 has built-in address uniqueness
   nodeSelector: "!node-role.kubernetes.io/control-plane"
 
 ---
