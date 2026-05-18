@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
-K0S_VERSION="${K0S_VERSION:-v1.36.0+k0s.0}"
+K0S_VERSION="${K0S_VERSION:-v1.35.4+k0s.0}"
 CRI_SOCKET="${CRI_SOCKET:-remote:unix:///var/run/crio/crio.sock}"
 CONFIG_FILE="${CONFIG_FILE:-/etc/k0s/k0s.yaml}"
 DISABLE_COMPONENTS="${DISABLE_COMPONENTS:-applier-manager,autopilot,helm,kube-proxy,metrics-server,update-prober,windows-node}"
