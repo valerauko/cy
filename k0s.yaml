@@ -1,0 +1,32 @@
+apiVersion: k0s.k0sproject.io/v1beta1
+kind: ClusterConfig
+metadata:
+  name: cy
+spec:
+  api:
+    address: 2400:8500:2002:3318:163:44:115:241
+  telemetry:
+    enabled: false
+  controllerManager:
+    extraArgs:
+      node-cidr-mask-size-ipv4: "26"
+      node-cidr-mask-size-ipv6: "122"
+  network:
+    provider: calico
+    primaryAddressFamily: IPv6
+    podCIDR: 10.42.0.0/16
+    serviceCIDR: 10.43.0.0/12
+    dualStack:
+      enabled: true
+      IPv6podCIDR: fd00:cafe:42::/108
+      IPv6serviceCIDR: fd00:cafe:43::/108
+    kubeProxy:
+      disabled: true
+    calico:
+      mode: bird
+      wireguard: true
+      envVars:
+        KUBERNETES_SERVICE_HOST: "2400:8500:2002:3318:163:44:115:241"
+        KUBERNETES_SERVICE_PORT: "6443"
+        FELIX_BPFENABLED: "true"
+        CALICO_IPV6POOL_NAT_OUTGOING: "true"
