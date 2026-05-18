@@ -96,9 +96,6 @@ networking:
   serviceSubnet: fd00:10:96::/108,10.96.0.0/12
 proxy: {}
 scheduler:
-  extraArgs:
-  - name: feature-gates
-    value: "DynamicResourceAllocation=false"
   resources:
     requests:
       memory: "50Mi"
