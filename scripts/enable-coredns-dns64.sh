@@ -12,7 +12,7 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 CM_YAML="${TMP_DIR}/coredns-cm.yaml"
 PATCHED_CM_YAML="${TMP_DIR}/coredns-cm-patched.yaml"
 
-kubectl -n kube-system get configmap coredns -o yaml > "${CM_YAML}"
+k0s kubectl -n kube-system get configmap coredns -o yaml > "${CM_YAML}"
 
 python3 - <<'PY' "${CM_YAML}" "${PATCHED_CM_YAML}" "${NAT64_PREFIX}"
 import sys
@@ -84,8 +84,8 @@ out_path.write_text(out)
 print("dns64 inserted")
 PY
 
-kubectl apply -f "${PATCHED_CM_YAML}"
-kubectl -n kube-system rollout restart deployment coredns
-kubectl -n kube-system rollout status deployment coredns --timeout=120s
+k0s kubectl apply -f "${PATCHED_CM_YAML}"
+k0s kubectl -n kube-system rollout restart deployment coredns
+k0s kubectl -n kube-system rollout status deployment coredns --timeout=120s
 
 echo "CoreDNS dns64 is enabled with prefix ${NAT64_PREFIX}."
