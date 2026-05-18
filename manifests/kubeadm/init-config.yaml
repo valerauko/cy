@@ -64,10 +64,15 @@ clusterName: kubernetes
 controlPlaneEndpoint: 163.44.115.241:6443
 controllerManager:
   extraArgs:
-  - name: node-cidr-mask-size-ipv4
-    value: "26"
-  - name: node-cidr-mask-size-ipv6
-    value: "122"
+    node-cidr-mask-size-ipv4: "26"
+    node-cidr-mask-size-ipv6: "122"
+  resources:
+    requests:
+      memory: "80Mi"
+      cpu: "50m"
+    limits:
+      memory: "150Mi"
+      cpu: "200m"
 dns: {}
 encryptionAlgorithm: RSA-2048
 etcd:
