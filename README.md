@@ -16,7 +16,7 @@
 - Data plane trial: Calico eBPF (kube-proxy replacement)
 - Encryption: Calico WireGuard
 - Keep: CoreDNS, system-rbac, konnectivity
-- Disable: `applier-manager,autopilot,helm,kube-proxy,metrics-server,update-prober,windows-node`
+- Disable: `autopilot,helm,kube-proxy,metrics-server,update-prober,windows-node`
 
 ## Generated Files
 
@@ -75,7 +75,7 @@ sudo k0s kubectl -n kube-system logs ds/calico-node | grep -E "BPF enabled|not s
 
 ```bash
 # 1) Re-enable kube-proxy in k0s
-DISABLE_COMPONENTS="applier-manager,autopilot,helm,metrics-server,update-prober,windows-node" ./scripts/install-k0s-controller.sh
+DISABLE_COMPONENTS="autopilot,helm,metrics-server,update-prober,windows-node" ./scripts/install-k0s-controller.sh
 
 # 2) Disable Calico eBPF and restore iptables data plane
 sudo k0s kubectl patch felixconfiguration default --type merge -p '{"spec":{"bpfEnabled":false}}'
@@ -126,6 +126,16 @@ This script now also installs and enables `jool-nat64.service`, so NAT64 comes b
 2) Enable DNS64 in CoreDNS from a machine with cluster-admin `kubectl` context:
 
 ```bash
+./scripts/enable-coredns-dns64.sh
+```
+
+If your cluster uses non-default DNS object names, you can override detection:
+
+```bash
+KUBECTL_CMD="k0s kubectl" \
+CORE_DNS_CM_NAMESPACE="kube-system" \
+CORE_DNS_CM_NAME="coredns" \
+CORE_DNS_DEPLOYMENT_NAME="coredns" \
 ./scripts/enable-coredns-dns64.sh
 ```
 
