@@ -21,7 +21,7 @@ sudo k0s install controller \
 
 sudo k0s start
 
-sleep 2
+sleep 5
 sudo k0s status
 
 echo
