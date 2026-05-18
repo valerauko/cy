@@ -45,11 +45,16 @@ kind: ClusterConfiguration
 kubernetesVersion: v1.36.0
 apiServer:
   extraArgs:
-    max-requests-inflight: "40"
-    max-mutating-requests-inflight: "20"
-    audit-log-maxsize: "10"
-    audit-log-maxbackup: "1"
-    enable-priority-and-fairness: "false"
+  - name: max-requests-inflight
+    value: "40"
+  - name: max-mutating-requests-inflight
+    value: "20"
+  - name: audit-log-maxsize
+    value: "10"
+  - name: audit-log-maxbackup
+    value: "1"
+  - name: enable-priority-and-fairness
+    value: "false"
   resources:
     requests:
       memory: "200Mi"
@@ -64,8 +69,10 @@ clusterName: kubernetes
 controlPlaneEndpoint: 163.44.115.241:6443
 controllerManager:
   extraArgs:
-    node-cidr-mask-size-ipv4: "26"
-    node-cidr-mask-size-ipv6: "122"
+  - name: node-cidr-mask-size-ipv4
+    value: "26"
+  - name: node-cidr-mask-size-ipv6
+    value: "122"
   resources:
     requests:
       memory: "80Mi"
@@ -88,4 +95,14 @@ networking:
   podSubnet: fd00:10:244::/108,10.244.0.0/16
   serviceSubnet: fd00:10:96::/108,10.96.0.0/12
 proxy: {}
-scheduler: {}
+scheduler:
+  extraArgs:
+  - name: feature-gates
+    value: "DynamicResourceAllocation=false"
+  resources:
+    requests:
+      memory: "50Mi"
+      cpu: "50m"
+    limits:
+      memory: "100Mi"
+      cpu: "200m"
