@@ -45,8 +45,18 @@ kind: ClusterConfiguration
 kubernetesVersion: v1.36.0
 apiServer:
   extraArgs:
-    max-requests-inflight: "100"
-    max-mutating-requests-inflight: "50"
+    max-requests-inflight: "40"
+    max-mutating-requests-inflight: "20"
+    audit-log-maxsize: "10"
+    audit-log-maxbackup: "1"
+    enable-priority-and-fairness: "false"
+  resources:
+    requests:
+      memory: "200Mi"
+      cpu: "100m"
+    limits:
+      memory: "300Mi"
+      cpu: "500m"
 caCertificateValidityPeriod: 87600h0m0s
 certificateValidityPeriod: 8760h0m0s
 certificatesDir: /etc/kubernetes/pki
