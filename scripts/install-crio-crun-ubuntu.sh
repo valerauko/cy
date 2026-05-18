@@ -23,7 +23,7 @@ echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.o
   | sudo tee /etc/apt/sources.list.d/cri-o.list >/dev/null
 
 sudo apt-get update
-sudo apt-get install -y cri-o crun cri-tools containernetworking-plugins ethtool iptables
+sudo apt-get install -y cri-o conmon crun cri-tools containernetworking-plugins ethtool iptables
 
 sudo tee /etc/modules-load.d/k8s.conf >/dev/null <<'EOF'
 overlay
