@@ -31,6 +31,14 @@ timeouts:
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 cgroupDriver: systemd
+failSwapOn: false
+eventRecordQPS: 4
+kubeReserved:
+  memory: "100Mi"
+  cpu: "50m"
+systemReserved:
+  memory: "150Mi"
+  cpu: "50m"
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
